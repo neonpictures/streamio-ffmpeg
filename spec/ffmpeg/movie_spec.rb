@@ -193,6 +193,32 @@ module FFMPEG
         end
       end
 
+      context "given a vertical video shot on an iphone" do
+        let(:movie) { Movie.new("#{fixture_path}/movies/vertical_iphone_video.mov") }
+
+        it "should have correct rotation detected" do
+          expect(movie.rotation).to eq(90)
+        end
+
+        it "should have switched width and height" do
+          expect(movie.width).to eq(1080)
+          expect(movie.height).to eq(1920)
+        end
+      end
+
+      context "given a vertical video shot on an iphone upside down" do
+        let(:movie) { Movie.new("#{fixture_path}/movies/vertical_iphone_video_shot_upside_down.mov") }
+
+        it "should have correct rotation detected" do
+          expect(movie.rotation).to eq(270)
+        end
+
+        it "should have switched width and height" do
+          expect(movie.width).to eq(1080)
+          expect(movie.height).to eq(1920)
+        end
+      end
+
       context "given a broken mp4 file" do
         let(:movie) { Movie.new("#{fixture_path}/movies/broken.mp4") }
 
