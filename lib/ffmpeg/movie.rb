@@ -5,7 +5,7 @@ require 'net/http'
 
 module FFMPEG
   class Movie
-    attr_reader :path, :duration, :time, :bitrate, :rotation, :creation_time
+    attr_reader :path, :duration, :time, :bitrate, :creation_time
     attr_reader :video_stream, :video_codec, :video_bitrate, :colorspace, :width, :height, :sar, :dar, :frame_rate
     attr_reader :audio_streams, :audio_stream, :audio_codec, :audio_bitrate, :audio_sample_rate, :audio_channels, :audio_tags
     attr_reader :container
@@ -75,29 +75,27 @@ module FFMPEG
         @bitrate = @metadata[:format][:bit_rate].to_i
 
         # TODO: Handle multiple video codecs (is that possible?)
-        video_stream = video_streams.first
-        unless video_stream.nil?
-          @video_codec = video_stream[:codec_name]
-          @colorspace = video_stream[:pix_fmt]
-          @width = video_stream[:width]
-          @height = video_stream[:height]
-          @video_bitrate = video_stream[:bit_rate].to_i
-          @sar = video_stream[:sample_aspect_ratio]
-          @dar = video_stream[:display_aspect_ratio]
+        # video_stream = video_streams.first
+        unless video_stream_metadata.nil?
+          @video_codec = video_stream_metadata[:codec_name]
+          @colorspace = video_stream_metadata[:pix_fmt]
+          @width = video_stream_metadata[:width]
+          @height = video_stream_metadata[:height]
+          @video_bitrate = video_stream_metadata[:bit_rate].to_i
+          @sar = video_stream_metadata[:sample_aspect_ratio]
+          @dar = video_stream_metadata[:display_aspect_ratio]
 
-          @frame_rate = unless video_stream[:avg_frame_rate] == '0/0'
-                          Rational(video_stream[:avg_frame_rate])
+          @frame_rate = unless video_stream_metadata[:avg_frame_rate] == '0/0'
+                          Rational(video_stream_metadata[:avg_frame_rate])
                         else
                           nil
                         end
 
-          @video_stream = "#{video_stream[:codec_name]} (#{video_stream[:profile]}) (#{video_stream[:codec_tag_string]} / #{video_stream[:codec_tag]}), #{colorspace}, #{resolution} [SAR #{sar} DAR #{dar}]"
+          @video_stream = "#{video_stream_metadata[:codec_name]} (#{video_stream_metadata[:profile]}) (#{video_stream_metadata[:codec_tag_string]} / #{video_stream_metadata[:codec_tag]}), #{colorspace}, #{resolution} [SAR #{sar} DAR #{dar}]"
 
-          @rotation = if video_stream.key?(:tags) and video_stream[:tags].key?(:rotate)
-                        video_stream[:tags][:rotate].to_i
-                      else
-                        nil
-                      end
+          require 'pry'
+          binding.pry
+
         end
 
         @audio_streams = audio_streams.map do |stream|
@@ -129,7 +127,7 @@ module FFMPEG
       unsupported_stream_ids = unsupported_streams(std_error)
       nil_or_unsupported = ->(stream) { stream.nil? || unsupported_stream_ids.include?(stream[:index]) }
 
-      @invalid = true if nil_or_unsupported.(video_stream) && nil_or_unsupported.(audio_stream)
+      @invalid = true if nil_or_unsupported.(video_stream_metadata) && nil_or_unsupported.(audio_stream)
       @invalid = true if @metadata.key?(:error)
       @invalid = true if std_error.include?("could not find codec parameters")
     end
@@ -207,6 +205,20 @@ module FFMPEG
       Transcoder.new(self, output_file, options.merge(screenshot: true), transcoder_options).run &block
     end
 
+    def rotation
+      @_rotation || begin
+        if video_stream_metadata.key?(:tags) and video_stream_metadata[:tags].key?(:rotate)
+          video_stream_metadata[:tags][:rotate].to_i
+        else
+          nil
+        end
+      end
+    end
+
+    def video_stream_metadata
+      metadata[:streams].find { |stream| stream.key?(:codec_type) and stream[:codec_type] == "video" }
+    end
+
     protected
     def aspect_from_dar
       calculate_aspect(dar)
@@ -220,7 +232,7 @@ module FFMPEG
       return nil unless ratio
       w, h = ratio.split(':')
       return nil if w == '0' || h == '0'
-      @rotation.nil? || (@rotation == 180) ? (w.to_f / h.to_f) : (h.to_f / w.to_f)
+      rotation.nil? || (rotation == 180) ? (w.to_f / h.to_f) : (h.to_f / w.to_f)
     end
 
     def aspect_from_dimensions
