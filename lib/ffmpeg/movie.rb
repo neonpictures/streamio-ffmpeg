@@ -1,7 +1,6 @@
 require 'time'
 require 'multi_json'
 require 'uri'
-require 'net/http'
 
 module FFMPEG
   class Movie
@@ -18,9 +17,7 @@ module FFMPEG
 
       if remote?
         @head = head
-        unless @head.is_a?(Net::HTTPSuccess)
-          raise Errno::ENOENT, "the URL '#{path}' does not exist or is not available (response code: #{@head.code})"
-        end
+        raise Errno::ENOENT, "the URL '#{path}' does not exist" unless @head.is_a?(Net::HTTPSuccess)
       else
         raise Errno::ENOENT, "the file '#{path}' does not exist" unless File.exist?(path)
       end
@@ -127,7 +124,7 @@ module FFMPEG
       end
 
       unsupported_stream_ids = unsupported_streams(std_error)
-      nil_or_unsupported = ->(stream) { stream.nil? || unsupported_stream_ids.include?(stream[:index]) }
+      nil_or_unsupported = -> (stream) { stream.nil? || unsupported_stream_ids.include?(stream[:index]) }
 
       @invalid = true if nil_or_unsupported.(video_stream) && nil_or_unsupported.(audio_stream)
       @invalid = true if @metadata.key?(:error)

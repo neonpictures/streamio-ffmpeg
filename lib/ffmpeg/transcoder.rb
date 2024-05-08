@@ -17,8 +17,15 @@ module FFMPEG
       end
       @output_file = output_file
 
-      @raw_options, @transcoder_options = optimize_screenshot_parameters(options, transcoder_options)
+      if options.is_a?(Array) || options.is_a?(EncodingOptions)
+        @raw_options = options
+      elsif options.is_a?(Hash)
+        @raw_options = EncodingOptions.new(options)
+      else
+        raise ArgumentError, "Unknown options format '#{options.class}', should be either EncodingOptions, Hash or Array."
+      end
 
+      @transcoder_options = transcoder_options
       @errors = []
 
       apply_transcoder_options
@@ -27,12 +34,7 @@ module FFMPEG
 
       input_options = @transcoder_options[:input_options] || []
       iopts = []
-
-      if input_options.is_a?(Array)
-        iopts += input_options
-      else
-        input_options.each { |k, v| iopts += ['-' + k.to_s, v] }
-      end
+      input_options.each { |k, v| iopts += ['-' + k.to_s, v] }
 
       @command = [FFMPEG.ffmpeg_binary, '-y', *iopts, '-i', @input, *@raw_options.to_a, @output_file]
     end
@@ -48,11 +50,13 @@ module FFMPEG
     end
 
     def encoding_succeeded?
-      @errors.empty?
+      @errors << "no output file created" and return false unless File.exist?(@output_file)
+      @errors << "encoded file is invalid" and return false unless encoded.valid?
+      true
     end
 
     def encoded
-      @encoded ||= Movie.new(@output_file) if File.exist?(@output_file)
+      @encoded ||= Movie.new(@output_file)
     end
 
     def timeout
@@ -91,8 +95,6 @@ module FFMPEG
             stderr.each('size=', &next_line)
           end
 
-        @errors << "ffmpeg returned non-zero exit code" unless wait_thr.value.success?
-
         rescue Timeout::Error => e
           FFMPEG.logger.error "Process hung...\n@command\n#{command}\nOutput\n#{@output}\n"
           raise Error, "Process hung. Full output: #{@output}"
@@ -101,9 +103,6 @@ module FFMPEG
     end
 
     def validate_output_file(&block)
-      @errors << "no output file created" unless File.exist?(@output_file)
-      @errors << "encoded file is invalid" if encoded.nil? || !encoded.valid?
-
       if encoding_succeeded?
         yield(1.0) if block_given?
         FFMPEG.logger.info "Transcoding of #{input} to #{@output_file} succeeded\n"
@@ -137,52 +136,6 @@ module FFMPEG
       output[/test/]
     rescue ArgumentError
       output.force_encoding("ISO-8859-1")
-    end
-
-    def optimize_screenshot_parameters(options, transcoder_options)
-      # Moves any screenshot seek_time to an 'ss' input_option
-      raw_options, input_seek_time = screenshot_seek_time(options)
-      screenshot_to_transcoder_options(input_seek_time, transcoder_options)
-
-      return raw_options, transcoder_options
-    end
-
-    def screenshot_seek_time(options)
-      # Returns any seek_time for the screenshot and removes it from the options
-      # such that the seek time can be moved to an input option for improved FFMPEG performance
-      if options.is_a?(Array)
-        seek_time_idx = options.find_index('-seek_time') unless options.find_index('-screenshot').nil?
-        unless seek_time_idx.nil?
-          options.delete_at(seek_time_idx) # delete 'seek_time'
-          input_seek_time = options.delete_at(seek_time_idx).to_s # fetch the seek value
-        end
-        result = options, input_seek_time
-      elsif options.is_a?(Hash)
-        raw_options = EncodingOptions.new(options)
-        input_seek_time = raw_options.delete(:seek_time).to_s unless raw_options[:screenshot].nil?
-        result = raw_options, input_seek_time
-      else
-        raise ArgumentError, "Unknown options format '#{options.class}', should be either EncodingOptions, Hash or Array."
-      end
-      result
-    end
-
-    def screenshot_to_transcoder_options(seek_time, transcoder_options)
-      return if seek_time.to_s == ''
-
-      input_options = transcoder_options[:input_options] || []
-      # remove ss from input options because we're overriding from seek_time
-      if input_options.is_a?(Array)
-        fi = input_options.find_index('-ss')
-        if fi.nil?
-          input_options.concat(['-ss', seek_time])
-        else
-          input_options[fi + 1] = seek_time
-        end
-      else
-        input_options[:ss] = seek_time
-      end
-      transcoder_options[:input_options] = input_options
     end
   end
 end

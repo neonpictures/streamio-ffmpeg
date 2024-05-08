@@ -60,12 +60,6 @@ module FFMPEG
               expect { Movie.new('http://127.0.0.1:8000/awesome%20movie.mov?fail=1') }.to raise_error(Errno::ENOENT)
             end
           end
-
-          context 'for existing file with no access' do
-            it 'should raise an exception' do
-              expect { Movie.new('http://127.0.0.1:8000/unauthorized.mov') }.to raise_error(Errno::ENOENT, /403/)
-            end
-          end
         end
         context "that does not exist" do
           it "should raise an exception" do
@@ -389,7 +383,7 @@ module FFMPEG
         end
 
         it "should parse the creation_time" do
-          expect(movie.creation_time).to eq(Time.parse("2010-02-05 16:05:04 UTC"))
+          expect(movie.creation_time).to eq(Time.parse("2010-02-05 16:05:04"))
         end
 
         it "should parse video stream information" do

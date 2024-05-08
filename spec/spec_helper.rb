@@ -1,6 +1,3 @@
-require 'simplecov'
-SimpleCov.start
-
 require 'bundler'
 Bundler.require
 
@@ -52,12 +49,6 @@ def start_web_server
       Logger: WEBrick::Log.new(File.open(File::NULL, 'w')),
       AccessLog: []
   )
-
-  @server.mount_proc '/unauthorized.mov' do |_, response|
-    response.body = 'Unauthorized'
-    response.status = 403
-  end
-
   Thread.new { @server.start }
 end
 

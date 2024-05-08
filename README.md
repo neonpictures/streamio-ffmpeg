@@ -1,15 +1,13 @@
 Streamio FFMPEG
 ===============
 
-[![Build Status](https://travis-ci.org/bikeath1337/streamio-ffmpeg.svg?branch=master)](https://travis-ci.org/bikeath1337/streamio-ffmpeg)
-[![Code Climate](https://codeclimate.com/github/bikeath1337/streamio-ffmpeg/badges/gpa.svg)](https://codeclimate.com/github/bikeath1337/streamio-ffmpeg)
-[![Test Coverage](https://codeclimate.com/github/bikeath1337/streamio-ffmpeg/badges/coverage.svg)](https://codeclimate.com/github/bikeath1337/streamio-ffmpeg/coverage)
+[![Code Climate](https://codeclimate.com/github/streamio/streamio-ffmpeg/badges/gpa.svg)](https://codeclimate.com/github/streamio/streamio-ffmpeg)
 
 Simple yet powerful wrapper around the ffmpeg command for reading metadata and transcoding movies.
 
-All work on this project is sponsored by the online video platform [Streamio](https://streamio.com) from [Rackfish](https://www.rackfish.com).
+All work on this project is sponsored by the online video platform [Streamio](http://streamio.com).
 
-[![Streamio](http://d253c4ja9jigvu.cloudfront.net/assets/small-logo.png)](https://streamio.com)
+[![Streamio](http://d253c4ja9jigvu.cloudfront.net/assets/small-logo.png)](http://streamio.com)
 
 Installation
 ------------
@@ -285,4 +283,4 @@ movie.transcode("movie.mp4", options, transcoder_options) # returns nil
 Copyright
 ---------
 
-Copyright (c) Rackfish AB. See LICENSE for details.
+Copyright (c) Streamio AB. See LICENSE for details.
