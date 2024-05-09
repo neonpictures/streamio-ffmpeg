@@ -1,0 +1,21 @@
+name: Tag Merged Pull Requests
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  tag_merge:
+    if: github.event.pull_request.merged && github.event.pull_request.base.ref == 'dummy-master'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Create Tag
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git tag -a "test-release-${GITHUB_RUN_NUMBER}" -m "Merged PR #${{ github.event.pull_request.number }}"
+        git push origin "test-release-${GITHUB_RUN_NUMBER}"
