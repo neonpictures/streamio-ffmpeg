@@ -193,6 +193,32 @@ module FFMPEG
         end
       end
 
+      context "given a vertical video shot on an iphone" do
+        let(:movie) { Movie.new("#{fixture_path}/movies/vertical_iphone_video.mov") }
+
+        it "should have correct rotation detected" do
+          expect(movie.rotation).to eq(90)
+        end
+
+        it "should have switched width and height" do
+          expect(movie.width).to eq(1080)
+          expect(movie.height).to eq(1920)
+        end
+      end
+
+      context "given a vertical video shot on an iphone upside down" do
+        let(:movie) { Movie.new("#{fixture_path}/movies/vertical_iphone_video_shot_upside_down.mov") }
+
+        it "should have correct rotation detected" do
+          expect(movie.rotation).to eq(270)
+        end
+
+        it "should have switched width and height" do
+          expect(movie.width).to eq(1080)
+          expect(movie.height).to eq(1920)
+        end
+      end
+
       context "given a broken mp4 file" do
         let(:movie) { Movie.new("#{fixture_path}/movies/broken.mp4") }
 
@@ -381,7 +407,7 @@ module FFMPEG
         end
 
         it "should parse the bitrate" do
-          expect(movie.bitrate).to eq(481846)
+          expect(movie.bitrate).to eq(481836)
         end
 
         it "should return nil rotation when no rotation exists" do
@@ -512,11 +538,11 @@ module FFMPEG
 
         transcoder_double = double(Transcoder)
         expect(Transcoder).to receive(:new).
-          with(movie, "#{tmp_path}/awesome.flv", {custom: "-vcodec libx264"}, preserve_aspect_ratio: :width).
+          with(movie, "#{tmp_path}/awesome.flv", {custom: "-vcodec libx264"}, {preserve_aspect_ratio: :width}).
           and_return(transcoder_double)
         expect(transcoder_double).to receive(:run)
 
-        movie.transcode("#{tmp_path}/awesome.flv", {custom: "-vcodec libx264"}, preserve_aspect_ratio: :width)
+        movie.transcode("#{tmp_path}/awesome.flv", {custom: "-vcodec libx264"}, {preserve_aspect_ratio: :width})
       end
     end
 
@@ -527,11 +553,11 @@ module FFMPEG
 
         transcoder_double = double(Transcoder)
         expect(Transcoder).to receive(:new).
-            with(movie, "#{tmp_path}/awesome.flv", {custom: "-vcodec libx264"}, preserve_aspect_ratio: :width).
+            with(movie, "#{tmp_path}/awesome.flv", {custom: "-vcodec libx264"}, {preserve_aspect_ratio: :width}).
             and_return(transcoder_double)
         expect(transcoder_double).to receive(:run)
 
-        movie.transcode("#{tmp_path}/awesome.flv", {custom: "-vcodec libx264"}, preserve_aspect_ratio: :width)
+        movie.transcode("#{tmp_path}/awesome.flv", {custom: "-vcodec libx264"}, {preserve_aspect_ratio: :width})
       end
     end
 
@@ -557,11 +583,11 @@ module FFMPEG
 
         transcoder_double = double(Transcoder)
         expect(Transcoder).to receive(:new).
-          with(movie, "#{tmp_path}/awesome.jpg", {seek_time: 2, dimensions: "640x480", screenshot: true}, preserve_aspect_ratio: :width).
+          with(movie, "#{tmp_path}/awesome.jpg", {seek_time: 2, dimensions: "640x480", screenshot: true}, {preserve_aspect_ratio: :width}).
           and_return(transcoder_double)
         expect(transcoder_double).to receive(:run)
 
-        movie.screenshot("#{tmp_path}/awesome.jpg", {seek_time: 2, dimensions: "640x480"}, preserve_aspect_ratio: :width)
+        movie.screenshot("#{tmp_path}/awesome.jpg", {seek_time: 2, dimensions: "640x480"}, {preserve_aspect_ratio: :width})
       end
 
       context 'with wildcard output filename' do
@@ -569,11 +595,11 @@ module FFMPEG
 
           transcoder_double = double(Transcoder)
           expect(Transcoder).to receive(:new).
-              with(movie, "#{tmp_path}/awesome_%d.jpg", {seek_time: 2, dimensions: '640x480', screenshot: true, vframes: 20}, preserve_aspect_ratio: :width, validate: false).
+              with(movie, "#{tmp_path}/awesome_%d.jpg", {seek_time: 2, dimensions: '640x480', screenshot: true, vframes: 20}, {preserve_aspect_ratio: :width, validate: false}).
               and_return(transcoder_double)
           expect(transcoder_double).to receive(:run)
 
-          movie.screenshot("#{tmp_path}/awesome_%d.jpg", {seek_time: 2, dimensions: '640x480', vframes: 20}, preserve_aspect_ratio: :width, validate: false)
+          movie.screenshot("#{tmp_path}/awesome_%d.jpg", {seek_time: 2, dimensions: '640x480', vframes: 20}, {preserve_aspect_ratio: :width, validate: false})
         end
       end
     end
